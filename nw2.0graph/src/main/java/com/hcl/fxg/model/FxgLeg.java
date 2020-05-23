@@ -8,18 +8,21 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-//@NoArgsConstructor
-//@AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
-//@Setter
+@Setter
 @ToString
 @EqualsAndHashCode
 @Builder
-public class FxgFacilityAddress {
-	private String addressLine1;
-	private String addressLine2;
-	private String zipCode5;
-	private String zipCode4;
-	private String cityName;
-	private String stateCode;	
+public class FxgLeg {
+	private FxgFacility originFacility;
+	private FxgFacility destinationFacility;
+	
+	private int originDowId;
+	private int destinationDowId;
+	private int destinationSplitTypeId;
+	
+
+	
 }
