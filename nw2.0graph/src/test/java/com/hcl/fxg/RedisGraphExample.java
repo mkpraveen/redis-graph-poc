@@ -5,30 +5,20 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hcl.fxg.model.FxgLeg;
 import com.hcl.fxg.model.FxgFacility;
 import com.hcl.fxg.model.FxgFacilityAddress;
+import com.hcl.fxg.model.FxgLeg;
 import com.hcl.fxg.model.graph.FxgEdge;
 import com.hcl.fxg.model.graph.FxgNode;
 import com.redislabs.redisgraph.Record;
-import com.redislabs.redisgraph.RedisGraphContext;
-import com.redislabs.redisgraph.RedisGraphTransaction;
 import com.redislabs.redisgraph.ResultSet;
 import com.redislabs.redisgraph.graph_entities.Edge;
 import com.redislabs.redisgraph.graph_entities.Node;
-import com.redislabs.redisgraph.graph_entities.Path;
 import com.redislabs.redisgraph.impl.api.RedisGraph;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class RedisGraphExample {
     public static void main(String[] args) {
-    	
-        // general context api. Not bound to graph key or connection
-        RedisGraph graph = new RedisGraph("127.0.0.1",6379);
-        
+    	     
         
         // Setting Facilities for path : 3411 -> 441 -> 432 -> 89 -> 3118
         //-------------------------------------------------------
@@ -129,9 +119,15 @@ public class RedisGraphExample {
         		.destinationSplitTypeId(3)
         		.build();
         
+        
+        // general context api. Not bound to graph key or connection
+        RedisGraph graph = new RedisGraph("127.0.0.1",6379);
+        
         System.out.println("Create Graph Query : " + createDirectGraphQuery(fxg3411to411));
 
         final String FXG_NW_GRAPH_NAME = "FXG_NETWORK";
+        graph.deleteGraph(FXG_NW_GRAPH_NAME);
+        
         graph.query(FXG_NW_GRAPH_NAME, createDirectGraphQuery(fxg3411to411));
         graph.query(FXG_NW_GRAPH_NAME, createDirectGraphQuery(fxg411to432));
         graph.query(FXG_NW_GRAPH_NAME, createDirectGraphQuery(fxg432to89));
@@ -144,51 +140,18 @@ public class RedisGraphExample {
             // get values
             Node n = record.getValue("n");
             Edge e =  record.getValue("e");
-            
-            
+                        
             //print record
             System.out.println("Result : " + record.toString());
         }
 
-        /*
-        resultSet = graph.query("social", "MATCH p = (:person)-[:knows]->(:person) RETURN p");
-        while(resultSet.hasNext()) {
-            Record record = resultSet.next();
-            Path p = record.getValue("p");
-
-            // More path API at Javadoc.
-            System.out.println(p.nodeCount());
-        }
-
-        // delete graph
-        graph.deleteGraph("social");
-
-        // get connection context - closable object
-        try(RedisGraphContext context = graph.getContext()) {
-            context.query("contextSocial","CREATE (:person{name:'roi',age:32})");
-            context.query("social","CREATE (:person{name:$name,age:$age})", params);
-            context.query("contextSocial", "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit') CREATE (a)-[:knows]->(b)");
-            // WATCH/MULTI/EXEC
-            context.watch("contextSocial");
-            RedisGraphTransaction t = context.multi();
-            t.query("contextSocial", "MATCH (a:person)-[r:knows]->(b:person{name:$name,age:$age}) RETURN a, r, b", params);
-            // support for Redis/Jedis native commands in transaction
-            t.set("x", "1");
-            t.get("x");
-            // get multi/exec results
-            List<Object> execResults =  t.exec();
-            System.out.println(execResults.toString());
-
-            context.deleteGraph("contextSocial");
-        }
-        */
     }
     
-    public static String createDirectGraphQuery(FxgLeg fxgDirectLane) {
+    public static String createDirectGraphQuery(FxgLeg fxgLeg) {
     	String retQuery = "";
-    	FxgNode originNode = new FxgNode(fxgDirectLane.getOriginFacility());
-    	FxgNode destinationNode = new FxgNode(fxgDirectLane.getDestinationFacility());
-    	FxgEdge fxgEdgeConnect = new FxgEdge(fxgDirectLane);
+    	FxgNode originNode = new FxgNode(fxgLeg.getOriginFacility());
+    	FxgNode destinationNode = new FxgNode(fxgLeg.getDestinationFacility());
+    	FxgEdge fxgEdgeConnect = new FxgEdge(fxgLeg);
     	
     	ObjectMapper mapper = new ObjectMapper();
     	mapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, false);
