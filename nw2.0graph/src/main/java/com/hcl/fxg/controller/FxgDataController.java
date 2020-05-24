@@ -13,13 +13,13 @@ import com.hcl.fxg.model.entity.FxgLeg;
 import com.hcl.fxg.service.FxgLegService;
 
 @RestController
-public class FxgNetworkController {
+public class FxgDataController {
 
 	@Autowired
 	private FxgLegService fxgLegServiceImpl;
 	
 	@ResponseStatus(HttpStatus.OK)
-	@GetMapping(value = "/seedData")
+	@GetMapping(value = "/seedDatabase")
 	public ResponseEntity<String> seedData() {
 		
         // Setting Facilities for path : 3411 -> 441 -> 432 -> 89 -> 3118

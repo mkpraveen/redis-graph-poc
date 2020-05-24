@@ -10,10 +10,12 @@ import com.hcl.fxg.model.entity.FxgFacilityAddress;
 import com.hcl.fxg.model.entity.FxgLeg;
 import com.hcl.fxg.model.graph.FxgEdge;
 import com.hcl.fxg.model.graph.FxgNode;
+import com.hcl.fxg.util.RedisGraphUtil;
 import com.redislabs.redisgraph.Record;
 import com.redislabs.redisgraph.ResultSet;
 import com.redislabs.redisgraph.graph_entities.Edge;
 import com.redislabs.redisgraph.graph_entities.Node;
+import com.redislabs.redisgraph.graph_entities.Path;
 import com.redislabs.redisgraph.impl.api.RedisGraph;
 
 public class RedisGraphExample {
@@ -123,15 +125,16 @@ public class RedisGraphExample {
         // general context api. Not bound to graph key or connection
         RedisGraph graph = new RedisGraph("127.0.0.1",6379);
         
-        System.out.println("Create Graph Query : " + createDirectGraphQuery(fxg3411to411));
+        System.out.println("Create Graph Query : " + RedisGraphUtil.createLegGraphQuery(fxg3411to411));
+        System.out.println("Create Graph Query : " + RedisGraphUtil.createLegGraphQuery(fxg411to432));
 
         final String FXG_NW_GRAPH_NAME = "FXG_NETWORK";
         graph.deleteGraph(FXG_NW_GRAPH_NAME);
         
-        graph.query(FXG_NW_GRAPH_NAME, createDirectGraphQuery(fxg3411to411));
-        graph.query(FXG_NW_GRAPH_NAME, createDirectGraphQuery(fxg411to432));
-        graph.query(FXG_NW_GRAPH_NAME, createDirectGraphQuery(fxg432to89));
-        graph.query(FXG_NW_GRAPH_NAME, createDirectGraphQuery(fxg89to3118));
+        graph.query(FXG_NW_GRAPH_NAME, RedisGraphUtil.createLegGraphQuery(fxg3411to411));
+        graph.query(FXG_NW_GRAPH_NAME, RedisGraphUtil.createLegGraphQuery(fxg411to432));
+        graph.query(FXG_NW_GRAPH_NAME, RedisGraphUtil.createLegGraphQuery(fxg432to89));
+        graph.query(FXG_NW_GRAPH_NAME, RedisGraphUtil.createLegGraphQuery(fxg89to3118));
         
         		
         ResultSet resultSet = graph.query(FXG_NW_GRAPH_NAME, "MATCH (n:FxgNode)-[e:FxgEdge]->(n1:FxgNode {facilityId:411}) RETURN n,e");
@@ -144,25 +147,28 @@ public class RedisGraphExample {
             //print record
             System.out.println("Result : " + record.toString());
         }
+        
+        
+        resultSet = graph.query(FXG_NW_GRAPH_NAME, "MATCH n = (:FxgNode {facilityId:3411})-[:FxgEdge]->(:FxgNode {facilityId:411}) RETURN n");
+        
+        while(resultSet.hasNext()) {
+            Record record = resultSet.next();
+            Path p = record.getValue("n");
+
+            
+            // More path API at Javadoc.
+            //System.out.println(p.nodeCount());
+            
+            p.getNodes().forEach( n -> {
+            	System.out.println( "Node : " + n);
+            });
+            
+            p.getEdges().forEach( e -> {
+            	System.out.println( "Edge : " + e);
+            });
+        }
 
     }
     
-    public static String createDirectGraphQuery(FxgLeg fxgLeg) {
-    	String retQuery = "";
-    	FxgNode originNode = new FxgNode(fxgLeg.getOriginFacility());
-    	FxgNode destinationNode = new FxgNode(fxgLeg.getDestinationFacility());
-    	FxgEdge fxgEdgeConnect = new FxgEdge(fxgLeg);
-    	
-    	ObjectMapper mapper = new ObjectMapper();
-    	mapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, false);
-    	mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
-		try {		
-			retQuery = "CREATE (:FxgNode" + mapper.writer().writeValueAsString(originNode) + ")-[:FxgEdge" + mapper.writer().writeValueAsString(fxgEdgeConnect) + "]->(:FxgNode" + mapper.writer().writeValueAsString(destinationNode) + ")";
-		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		   	
-    	return retQuery;
-    }
+
 }

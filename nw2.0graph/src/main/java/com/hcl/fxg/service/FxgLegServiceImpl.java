@@ -1,5 +1,7 @@
 package com.hcl.fxg.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,4 +20,10 @@ public class FxgLegServiceImpl implements FxgLegService {
 		return fxgLegRepo.save(fxgLeg);
 	}
 
+	@Override
+	public List<FxgLeg> getAllFxgLegs() {
+		return fxgLegRepo.findAll();
+	}
+
+	
 }
