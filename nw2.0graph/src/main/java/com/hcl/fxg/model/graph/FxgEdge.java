@@ -1,6 +1,7 @@
 package com.hcl.fxg.model.graph;
 
 import com.hcl.fxg.model.entity.FxgLeg;
+import com.redislabs.redisgraph.graph_entities.Edge;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -24,6 +25,13 @@ public class FxgEdge {
 	
 	public FxgEdge() {
 		super();
+	}
+	
+	public FxgEdge(Edge redisEdge) {
+		super();
+		this.originDowId = Integer.parseInt(redisEdge.getProperty("originDowId").getValue().toString());
+		this.destinationDowId = Integer.parseInt(redisEdge.getProperty("destinationDowId").getValue().toString());
+		this.destinationSplitTypeId = Integer.parseInt(redisEdge.getProperty("destinationSplitTypeId").getValue().toString());;
 	}
 	
 }

@@ -1,10 +1,12 @@
 package com.hcl.fxg;
 
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.hcl.fxg.model.FxgLane;
 import com.hcl.fxg.model.entity.FxgFacility;
 import com.hcl.fxg.model.entity.FxgFacilityAddress;
 import com.hcl.fxg.model.entity.FxgLeg;
@@ -123,7 +125,7 @@ public class RedisGraphExample {
         
         
         // general context api. Not bound to graph key or connection
-        RedisGraph graph = new RedisGraph("127.0.0.1",6379);
+        RedisGraph graph = new RedisGraph(RedisGraphUtil.REDIS_SERVER_HOSTNAME,RedisGraphUtil.REDIS_SERVER_PORT);
         
         System.out.println("Create Graph Query : " + RedisGraphUtil.createLegGraphQuery(fxg3411to411));
         System.out.println("Create Graph Query : " + RedisGraphUtil.createLegGraphQuery(fxg411to432));
@@ -131,10 +133,20 @@ public class RedisGraphExample {
         final String FXG_NW_GRAPH_NAME = "FXG_NETWORK";
         graph.deleteGraph(FXG_NW_GRAPH_NAME);
         
-        graph.query(FXG_NW_GRAPH_NAME, RedisGraphUtil.createLegGraphQuery(fxg3411to411));
-        graph.query(FXG_NW_GRAPH_NAME, RedisGraphUtil.createLegGraphQuery(fxg411to432));
-        graph.query(FXG_NW_GRAPH_NAME, RedisGraphUtil.createLegGraphQuery(fxg432to89));
-        graph.query(FXG_NW_GRAPH_NAME, RedisGraphUtil.createLegGraphQuery(fxg89to3118));
+        List<FxgLeg> legs = new ArrayList<>();
+        legs.add(fxg3411to411);
+        legs.add(fxg411to432);
+        legs.add(fxg432to89);
+        legs.add(fxg89to3118);
+        
+//        graph.query(FXG_NW_GRAPH_NAME, RedisGraphUtil.createLegGraphQuery(fxg3411to411));
+//        graph.query(FXG_NW_GRAPH_NAME, RedisGraphUtil.createLegGraphQuery(fxg411to432));
+//        graph.query(FXG_NW_GRAPH_NAME, RedisGraphUtil.createLegGraphQuery(fxg432to89));
+//        graph.query(FXG_NW_GRAPH_NAME, RedisGraphUtil.createLegGraphQuery(fxg89to3118));
+        
+        System.out.println(RedisGraphUtil.createPathGraphQuery(legs));
+        
+        graph.query(FXG_NW_GRAPH_NAME, RedisGraphUtil.createPathGraphQuery(legs));
         
         		
         ResultSet resultSet = graph.query(FXG_NW_GRAPH_NAME, "MATCH (n:FxgNode)-[e:FxgEdge]->(n1:FxgNode {facilityId:411}) RETURN n,e");
@@ -148,24 +160,47 @@ public class RedisGraphExample {
             System.out.println("Result : " + record.toString());
         }
         
+        Map<String, Object> params = new HashMap<>();
+        params.put("origId", 3411);
+        params.put("destId", 3118);
         
-        resultSet = graph.query(FXG_NW_GRAPH_NAME, "MATCH n = (:FxgNode {facilityId:3411})-[:FxgEdge]->(:FxgNode {facilityId:411}) RETURN n");
+               
+        resultSet = graph.query(FXG_NW_GRAPH_NAME, "MATCH p = (:FxgNode {facilityId:$origId})-[:FxgEdge*1..10]->(:FxgNode {facilityId:$destId}) RETURN p", params);
+        
+        FxgLane fxgLane = new FxgLane();
+        fxgLane.setSortPoints(new ArrayList<>());
+        
+        fxgLane.setOrigFacilityId(3411);
+        fxgLane.setDestFacilityId(3118);
+        
         
         while(resultSet.hasNext()) {
             Record record = resultSet.next();
-            Path p = record.getValue("n");
+            Path p = record.getValue("p");
 
             
             // More path API at Javadoc.
             //System.out.println(p.nodeCount());
             
             p.getNodes().forEach( n -> {
+            	System.out.println( "Node : " + new FxgNode(n));
             	System.out.println( "Node : " + n);
             });
             
             p.getEdges().forEach( e -> {
-            	System.out.println( "Edge : " + e);
+            	FxgEdge fxgEdge = new FxgEdge(e);
+            	
+            	Node node = p.getNodes().stream().filter( t -> t.getId() == e.getSource()).findFirst().orElse(null);
+            	if (null != node) {
+            		FxgNode fxgNode = new FxgNode(node);
+            		
+            		Map<Integer, Integer> sortPoint = new HashMap<>();
+            		sortPoint.put(fxgNode.getFacilityId(), fxgEdge.getOriginDowId());
+            		fxgLane.getSortPoints().add(sortPoint);
+            	}
             });
+            
+            System.out.println(fxgLane);
         }
 
     }

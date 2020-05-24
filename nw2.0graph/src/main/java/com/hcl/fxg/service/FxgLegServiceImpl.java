@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.hcl.fxg.model.entity.FxgFacility;
 import com.hcl.fxg.model.entity.FxgLeg;
 import com.hcl.fxg.model.repository.FxgLegRepository;
 
