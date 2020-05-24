@@ -1,6 +1,6 @@
 package com.hcl.fxg.model.graph;
 
-import com.hcl.fxg.model.FxgLeg;
+import com.hcl.fxg.model.entity.FxgLeg;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
